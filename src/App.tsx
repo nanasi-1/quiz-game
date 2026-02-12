@@ -377,7 +377,7 @@ export default function QuizGame() {
     if (count) picked = picked.slice(0, count);
     setShuffled(picked);
     setIndex(0);
-    setScore(5);
+    setScore(0);
     setStage("quiz");
     setChoices(shuffleArray(picked[0].choices));
     startTimer()
