@@ -344,7 +344,6 @@ export default function QuizGame() {
   ], []);
 
   // Settings & state
-  // const [questions, setQuestions] = useState<readonly Question[]>(SAMPLE_QUESTIONS);
   const [timeLimitSec, setTimeLimitSec] = useState(20);
 
   const [stage, setStage] = useState("start"); // start | quiz | result
@@ -372,12 +371,13 @@ export default function QuizGame() {
     return pool.slice(0, pool.length);
   }
 
-  function startQuiz() {
+  function startQuiz(count?: number) {
     const shuffled = shuffleArray(SAMPLE_QUESTIONS);
-    const picked = shuffled.find(i => i.debug) ? shuffled.filter(i => i.debug) : shuffled;
+    let picked = shuffled.find(i => i.debug) ? shuffled.filter(i => i.debug) : shuffled;
+    if (count) picked = picked.slice(0, count);
     setShuffled(picked);
     setIndex(0);
-    setScore(0);
+    setScore(5);
     setStage("quiz");
     setChoices(shuffleArray(picked[0].choices));
     startTimer()
@@ -392,10 +392,8 @@ export default function QuizGame() {
 
   function startTimer() {
     setRemaining(timeLimitSec);
-    const tid = setInterval(() => {
-      setRemaining(r => r - 1);
-      setRemainingId(tid);
-    }, 1000);
+    const tid = setInterval(() => setRemaining(r => r - 1), 1000);
+    setRemainingId(tid);
   }
 
   useEffect(() => {
@@ -410,17 +408,14 @@ export default function QuizGame() {
     const correct = q && q.answer === choiceIndex;
     if (!timedOut && typeof choiceIndex === "number" && correct) setScore((s) => s + 1);
 
-    // small delay to show feedback
-    setTimeout(() => {
-      if (index + 1 < SAMPLE_QUESTIONS.length) {
-        setIndex((i) => i + 1);
-        setSelected(null);
-        setChoices(shuffleArray(questions[index + 1].choices));
-        startTimer();
-      } else {
-        finishQuiz();
-      }
-    }, 300);
+    if (index + 1 < shuffled.length) {
+      setIndex((i) => i + 1);
+      setSelected(null);
+      setChoices(shuffleArray(questions[index + 1].choices));
+      startTimer();
+    } else {
+      finishQuiz();
+    }
   }
 
   function finishQuiz() {
@@ -436,35 +431,39 @@ export default function QuizGame() {
     setScore(0);
   }
 
-  function shareResult() {
-    const text = `I scored ${score}/${shuffled.length} on QuizGame!`;
-    if (navigator.share) {
-      navigator.share({ title: "Quiz Result", text });
-    } else {
-      navigator.clipboard.writeText(text);
-      alert("結果をコピーしました: " + text);
-    }
-  }
-
   // UI components
   if (stage === "start") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-6">
-        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6">
+      <div className="min-h-screen bg-linear-to-br from-white via-cyan-50 to-sky-100 flex items-center justify-center p-6">
+        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg px-6 pt-8 pb-6">
           <header className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-semibold">Quiz Game</h1>
+            <h1 className="text-3xl font-bold">
+              <span className="text-cyan-500">ˈōS</span>
+              <span className="text-cyan-600">H(ə</span>
+              <span className="text-sky-700">)n </span>
+              <span className="text-sky-800">Qu</span>
+              <span className="text-blue-900">iz</span>
+            </h1>
             <div className="text-sm text-slate-500">Highscore: {highscore}</div>
           </header>
+          <hr className="mb-5 border-slate-300" />
 
           <section className="text-slate-800 mb-4">
-            ようこそ！このクイズゲームはあなたの知識を試すためのものです。<br />
-            準備ができたら、下のスタートボタンから開始してください。<br />
+            <p className="mb-2">
+              ようこそ！このクイズゲームであなたの雑学知識を試してみてください。<br />
+            </p>
+            <p>
+              準備ができたら、下のスタートボタンから開始してください。<br />
+            </p>
           </section>
 
           <section className="grid gap-4">
             <div className="flex gap-3">
-              <button className="flex-1 py-2 rounded-xl bg-sky-600 text-white font-medium cursor-pointer" onClick={startQuiz}>
-                スタート
+              <button className="flex-2 py-2 rounded-xl bg-cyan-500 text-white cursor-pointer" onClick={() => startQuiz(10)}>
+                10問でスタート
+              </button>
+              <button className="flex-1 py-2 rounded-xl bg-slate-200 text-slate-800 font-medium cursor-pointer" onClick={() => startQuiz()}>
+                全ての問題でスタート
               </button>
             </div>
           </section>
@@ -478,7 +477,7 @@ export default function QuizGame() {
     const progress = Math.round(((index + 1) / shuffled.length) * 100);
 
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-linear-to-br from-white via-cyan-50 to-sky-100 flex items-center justify-center p-6">
         <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-6">
           <header className="flex items-center justify-between mb-4">
             <div>
@@ -492,7 +491,7 @@ export default function QuizGame() {
           </header>
 
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
-            <div className="h-full bg-sky-500" style={{ width: `${progress}%` }} />
+            <div className="h-full bg-cyan-500" style={{ width: `${progress}%` }} />
           </div>
           <div className="mb-3 text-sm text-slate-600">残り: {remaining}s</div>
 
@@ -557,19 +556,19 @@ export default function QuizGame() {
 
   // result
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-linear-to-br from-white via-cyan-50 to-sky-100 flex items-center justify-center p-6">
       <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-6 text-center">
         <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
           <div className="text-xl font-semibold mb-2">結果</div>
           <div className="text-4xl font-bold mb-4">{score} / {shuffled.length}</div>
 
           <div className="flex items-center justify-center gap-3 mb-4">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 text-white" onClick={shareResult}>
-              <Share2 /> 共有
-            </button>
+            <a className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500 text-white" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent("https://nanasi-1.github.io/quiz-game/")}&text=${encodeURIComponent(`${shuffled.length}問中${score}問正解しました！`)}`} target="_blank">
+              <Share2 /> Xでシェア
+            </a>
 
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl border" onClick={() => { resetAll(); }}>
-              <RefreshCw /> もう一回設定
+              <RefreshCw /> もういちど遊ぶ
             </button>
           </div>
 
